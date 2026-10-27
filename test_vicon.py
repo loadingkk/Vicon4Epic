@@ -5,7 +5,7 @@ import os
 
 def load_config(config_file="config.cfg"):
     """Read the Vicon object name from config.cfg."""
-    object_name = "OriginsX@192.168.10.1"  # Default fallback
+    object_name = "visio1@192.168.11.2"  # Default fallback
     try:
         with open(config_file, 'r') as file:
             for line in file:

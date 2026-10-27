@@ -9,7 +9,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Find dependencies
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(Eigen3 REQUIRED NO_MODULE)
 find_library(VRPN_LIB vrpn HINTS /opt/homebrew/lib /usr/local/lib)
 find_library(QUAT_LIB quat HINTS /opt/homebrew/lib /usr/local/lib)
 if (NOT VRPN_LIB)

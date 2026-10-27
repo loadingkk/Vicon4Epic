@@ -2,15 +2,12 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <limits>
 
 vicon::vicon()
 {
-    on = true;
-    // Load configuration from config.cfg
-    if (!loadConfig("../config.cfg")) {
-        std::cerr << "VICON: Failed to load config file, using default object" << std::endl;
-        object = "Origins@192.168.10.1"; // Fallback default
-    }
+    x_v.setConstant(std::numeric_limits<double>::quiet_NaN());
+    R_vm.setConstant(std::numeric_limits<double>::quiet_NaN());
 }
 
 vicon::~vicon()
@@ -24,6 +21,7 @@ vicon::~vicon()
 void vicon::close()
 {
     delete tracker;
+    tracker = nullptr;
     on = false;
 
     std::cout << "VICON: object closed" << std::endl;
@@ -31,14 +29,22 @@ void vicon::close()
 
 void vicon::open(std::string object)
 {
+    if (on) close();
+    x_v.setConstant(std::numeric_limits<double>::quiet_NaN());
+    R_vm.setConstant(std::numeric_limits<double>::quiet_NaN());
     tracker = new vrpn_Tracker_Remote(object.c_str());
     tracker->register_change_handler(this, vicon::callback);
+    on = true;
 
     std::cout << "VICON: object opened" << std::endl;
 }
 
 void vicon::open()
 {
+    if (!loadConfig("config.cfg") && !loadConfig("../config.cfg")) {
+        std::cerr << "VICON: Failed to load config file, using default object" << std::endl;
+        object = "Origins@192.168.10.1";
+    }
     open(object);
 }
 
@@ -106,6 +112,8 @@ void vicon::callback(void* userdata, const vrpn_TRACKERCB tdata)
     self->R_vm(2, 1) = 2 * tdata.quat[0] * tdata.quat[3] + 2 * tdata.quat[2] * tdata.quat[1];
     self->R_vm(2, 2) = 1 - 2 * (tdata.quat[0] * tdata.quat[0]) - 2 * (tdata.quat[1] * tdata.quat[1]);
 
-    std::cout << "\nx_v: " << self->x_v.transpose() << std::endl;
-    std::cout << "R_vm: " << self->R_vm << std::endl;
+    if (self->pose_handler) {
+        const double timestamp = tdata.msg_time.tv_sec + tdata.msg_time.tv_usec * 1e-6;
+        self->pose_handler(self->x_v, self->R_vm, timestamp, tdata.sensor);
+    }
 }
